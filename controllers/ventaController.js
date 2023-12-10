@@ -1,4 +1,29 @@
 const Venta = require("../models/ventaModel");
+const DetalleVenta = require("../models/detalleVentaModel");
+const sequelize = require("../config/db");
+
+const realizarVenta = async (req, res) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const venta = await Venta.create(req.body, { transaction: t });
+    const detalleVenta = await DetalleVenta.create(req.body.detalle, {
+      transaction: t,
+    });
+    await t.commit();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Venta completada exitosamente." });
+  } catch (error) {
+    await t.rollback();
+
+    console.error("Error en la transacción:", error);
+    res
+      .status(500)
+      .json({ success: false, error: "Error interno del servidor." });
+  }
+};
 
 const getAll = async (req, res) => {
   try {
@@ -92,7 +117,7 @@ const remove = async (req, res) => {
 module.exports = {
   getAll,
   getById,
-  create,
+  create: realizarVenta,
   update,
   remove,
 };
